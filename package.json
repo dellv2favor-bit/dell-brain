@@ -1,0 +1,19 @@
+{
+  "name": "dell-brain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "auto-builder.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github-dell:dellv2favor-bit/dell-brain.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  }
+}

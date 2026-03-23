@@ -1,5 +1,58 @@
 {
   "version": 1,
-  "last_scan": null,
-  "ideas": []
+  "last_scan": "2026-03-23T23:32:51.959Z",
+  "ideas": [
+    {
+      "type": "friction_point",
+      "description": "Bot-to-bot infinite loop: Dell and Cortana (Josh's bot) ping each other endlessly, generating 10+ useless messages before one side stops. Neither bot detects it's talking to another bot and breaks the cycle.",
+      "frequency": "Every cross-bot conversation (seen 10+ messages in this single thread)",
+      "solution": "A bot-loop detector that tracks message patterns per contact. If the same conversation has >3 rapid back-and-forth messages with no human-like variation (short replies, emoji-only, 'standing by' type messages), auto-mute the thread for 30 minutes and notify Rondell. Also detect the '[Message from ... AI bot]' prefix pattern and skip auto-reply entirely.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "bot-loop-breaker.js",
+      "priority": 9,
+      "status": "built",
+      "identified": "2026-03-23T23:32:51.959Z",
+      "built": "2026-03-23T23:34:53.280Z"
+    },
+    {
+      "type": "friction_point",
+      "description": "Trusted contacts (Brandon) hit walls and ask Dell to 'call Rondell' or escalate — Dell can't actually bridge that gap efficiently. Brandon says 'the server keeps crashing' and 'I've tried everything' with no resolution path.",
+      "frequency": "3+ messages from Brandon in this window alone",
+      "solution": "An escalation formatter that detects when a trusted contact is stuck (keywords: 'won't connect', 'keeps crashing', 'tried everything', 'call Rondell') and automatically sends Rondell a structured summary: who needs help, what they've tried, what's blocking them — so Rondell can respond in one message instead of discovering the problem through a chain.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "smart-escalation.js",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-23T23:32:51.959Z",
+      "built": null
+    },
+    {
+      "type": "manual_workflow",
+      "description": "GitHub repo sharing with collaborators is a multi-step nightmare: private repo clone fails → need to explain PAT types (classic vs fine-grained) → collaborator doesn't understand Git → clone still fails due to missing credentials on droplet → back-and-forth escalates to 10+ messages. Brandon alone generated 6+ messages on this.",
+      "frequency": "Recurring with each new collaborator onboarding (Brandon, Cortana/Josh)",
+      "solution": "A collaborator onboarding script that: (1) checks if a repo is public/private, (2) if private, generates a temporary read-only clone URL using Rondell's stored PAT, (3) sends the collaborator a single message with exact step-by-step instructions tailored to their setup (VS Code, CLI, etc). Eliminates the back-and-forth.",
+      "complexity": "medium",
+      "impact": "high",
+      "filename": "collab-onboard.js",
+      "priority": 6,
+      "status": "pending",
+      "identified": "2026-03-23T23:32:51.959Z",
+      "built": null
+    },
+    {
+      "type": "missing_tool",
+      "description": "Rondell asks for flight price research (cheapest exit row seat, specific dates, specific routes) but Dell has no travel search capability. The request goes unanswered or requires manual web browsing.",
+      "frequency": "At least 1x in this window — likely recurring given Rondell's lifestyle",
+      "solution": "A flight search script using Google Flights scraping or a flights API (Amadeus free tier / SerpAPI flights) that takes origin, destination, date range, and seat preference, then returns top 3 cheapest options formatted for WhatsApp.",
+      "complexity": "medium",
+      "impact": "medium",
+      "filename": "flight-finder.js",
+      "priority": 4,
+      "status": "pending",
+      "identified": "2026-03-23T23:32:51.959Z",
+      "built": null
+    }
+  ]
 }

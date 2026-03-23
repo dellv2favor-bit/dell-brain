@@ -50,17 +50,21 @@ function getRecentConversations() {
 
   // Get recent memories for context
   const memories = db.prepare(`
-    SELECT key, value FROM memories
-    WHERE timestamp > ?
-    ORDER BY timestamp DESC LIMIT 100
+    SELECT category, content FROM memories
+    WHERE created_at > ?
+    ORDER BY created_at DESC LIMIT 100
   `).all(cutoff);
 
   // Get router telemetry to see what routes are used most
-  const telemetry = db.prepare(`
-    SELECT route, count(*) as cnt FROM router_telemetry
-    WHERE timestamp > ?
-    GROUP BY route ORDER BY cnt DESC
-  `).all(cutoff).catch?.(() => []) || [];
+  let telemetry = [];
+  try {
+    telemetry = db.prepare(`
+      SELECT route, count(*) as cnt FROM router_telemetry
+      WHERE timestamp > ?
+      GROUP BY route ORDER BY cnt DESC
+    `).all(cutoff);
+  } catch {}
+
 
   db.close();
 
