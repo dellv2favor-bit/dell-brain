@@ -232,11 +232,34 @@ Output ONLY the code, no explanation.`;
       { timeout: 180000, maxBuffer: 10 * 1024 * 1024 }
     ).toString();
 
-    const parsed = JSON.parse(result);
-    let code = parsed.result || parsed.content || result;
+    let code = result;
 
-    // Strip markdown code fences if present
-    code = code.replace(/^```(?:javascript|js)?\n?/m, '').replace(/\n?```$/m, '').trim();
+    // Parse Claude CLI JSON output — extract text content
+    try {
+      const parsed = JSON.parse(result);
+      code = parsed.result || parsed.content || result;
+      // Handle array-of-blocks format
+      if (Array.isArray(code)) {
+        code = code.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      }
+    } catch {
+      // Not JSON — use raw output
+    }
+
+    // Extract code from markdown fences (greedy — grab the biggest code block)
+    const fenceMatch = code.match(/```(?:javascript|js)?\n([\s\S]*?)```/);
+    if (fenceMatch) {
+      code = fenceMatch[1].trim();
+    } else {
+      // Strip any remaining fences
+      code = code.replace(/^```(?:javascript|js)?\n?/gm, '').replace(/\n?```$/gm, '').trim();
+    }
+
+    // If it still looks like a description (no function/const/require/module), reject it
+    if (code.length < 50 || (!code.includes('function') && !code.includes('const ') && !code.includes('require(') && !code.includes('module.exports') && !code.includes('class '))) {
+      log('Build output looks like a description, not code. Skipping.');
+      return { success: false, error: 'Claude returned description instead of code' };
+    }
 
     fs.writeFileSync(filepath, code);
     log(`Built: ${filepath} (${code.split('\n').length} lines)`);
