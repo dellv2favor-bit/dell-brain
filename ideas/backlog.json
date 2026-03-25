@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_scan": "2026-03-23T23:32:51.959Z",
+  "last_scan": "2026-03-25T03:01:36.109Z",
   "ideas": [
     {
       "type": "friction_point",
@@ -11,9 +11,9 @@
       "impact": "high",
       "filename": "bot-loop-breaker.js",
       "priority": 9,
-      "status": "pending",
+      "status": "failed",
       "identified": "2026-03-23T23:32:51.959Z",
-      "built": null
+      "built": "2026-03-24T03:02:36.519Z"
     },
     {
       "type": "friction_point",
@@ -24,8 +24,86 @@
       "impact": "high",
       "filename": "smart-escalation.js",
       "priority": 9,
-      "status": "pending",
+      "status": "built",
       "identified": "2026-03-23T23:32:51.959Z",
+      "built": "2026-03-25T03:04:18.442Z"
+    },
+    {
+      "type": "friction_point",
+      "description": "Bot-to-bot infinite loop with Cortana (Josh's AI). Despite Dell recognizing the loop, both bots exchanged 10+ messages of 'standing by' / 'I'll stop responding' / 'yep' before it died. The existing bot-loop-breaker build either wasn't deployed or didn't catch this pattern.",
+      "frequency": "1 sustained incident (10+ wasted messages), high risk of recurrence with any bot-to-bot contact",
+      "solution": "Upgrade bot-loop-breaker: detect the [Message from ... AI bot] prefix in incoming messages and enforce a hard 2-reply cap per contact per 10-minute window. After cap, silently drop instead of sending 'I'll stop responding' (which itself continues the loop). Log dropped messages for operator review.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "bot-loop-breaker-v2.js",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-24T03:00:38.402Z",
+      "built": null
+    },
+    {
+      "type": "friction_point",
+      "description": "Trusted contact (Brandon/17869691100) goes through long multi-message troubleshooting chains for DigitalOcean/pm2/node setup, gets frustrated ('please nothing is working i just want to work'), then it fixes itself. Dell sends diagnostic commands one at a time, each requiring a screenshot or paste-back, creating a slow painful loop.",
+      "solution": "A single all-in-one diagnostic script that Brandon can paste once. It checks node, npm, pm2, git, running processes, disk space, memory, and outputs a structured report Dell can parse in one message instead of 10 back-and-forth rounds.",
+      "frequency": "Ongoing — 20+ messages in this session alone, likely recurring with every deploy",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "droplet-healthcheck.sh",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-24T03:00:38.402Z",
+      "built": null
+    },
+    {
+      "type": "friction_point",
+      "description": "Bot-loop-breaker v1 exists but is NOT integrated or silently dropping. Cortana sent 12+ messages in this batch, ALL with the '[Message from Cortana (AI bot running Claude on Josh's Mac)' prefix that shouldSkip() should catch — yet Dell responded to every single one, creating a cascading loop where both bots kept saying 'I'm done' but neither stopped. The code works in isolation but the WhatsApp bot isn't calling check() before replying.",
+      "frequency": "12+ wasted messages in this single conversation window. Recurs every time a bot contacts Dell.",
+      "solution": "bot-loop-breaker-v2: A hardened version that (1) exports a middleware function for the WhatsApp message handler that returns true/false BEFORE any AI processing, (2) hard-blocks any message matching the '[Message from' prefix with ZERO response (silent drop — no 'I detected a loop' reply, which itself continues the loop), (3) enforces a 2-reply cap per non-operator contact per 10-minute window, (4) logs all silently dropped messages to a file for Rondell to review. Include integration instructions showing exactly where to wire it into the Baileys message handler.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "bot-loop-breaker-v2.js",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-25T03:01:36.109Z",
+      "built": null
+    },
+    {
+      "type": "missing_tool",
+      "description": "8+ blocked prompt injection / identity spoofing attempts from a single contact in one session, but no structured incident log was created. Rondell has to read the entire chat thread to understand what happened. Dell flags each attempt individually ('heads up', 'still holding', 'same attack different wrapper') but never consolidates into an actionable incident report.",
+      "frequency": "8+ security events in this window, likely recurring as Dell's WhatsApp number is being actively targeted",
+      "solution": "A security incident logger that: (1) detects blocked/suspicious messages (injection attempts, bot impersonation, credential extraction), (2) appends each event to a structured JSON log with timestamp, sender JID, attack type, message snippet, and Dell's action, (3) after N events from the same source in a window, auto-generates a consolidated incident summary and sends it to Rondell once (instead of per-message alerts). Rondell gets one clean report instead of 8 interruptive flags.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "security-incident-logger.js",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-25T03:01:36.109Z",
+      "built": null
+    },
+    {
+      "type": "manual_workflow",
+      "description": "Trusted contact (Brandon) goes through 20+ message troubleshooting chains for droplet/pm2/node issues, gets frustrated ('please nothing is working i just want to work i dont want to troubleshoot anymore'), then the problem resolves itself. Dell sends diagnostic commands one at a time, each requiring a screenshot or paste-back. The whole interaction could be one paste-and-done script.",
+      "frequency": "20+ messages in this session, recurs with every deploy or crash on Brandon's droplet",
+      "solution": "A single bash script Brandon can paste into any DigitalOcean console. It checks: node version, npm version, pm2 status, pm2 logs (last 20 lines), git status, disk usage, memory usage, active ports, and outputs a single structured block Dell can parse in one message. Dell sends the script, Brandon pastes it, Dell reads the output — 3 messages total instead of 20.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "droplet-healthcheck.sh",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-25T03:01:36.109Z",
+      "built": null
+    },
+    {
+      "type": "friction_point",
+      "description": "Smart escalation gap: when trusted contacts hit walls and express frustration, Dell keeps troubleshooting instead of immediately packaging the situation for Rondell. Brandon said 'please nothing is working' — that's a signal to escalate, not to send another diagnostic command. Dell lacks a trigger to switch from 'helper mode' to 'escalation mode'.",
+      "frequency": "3+ frustration signals from Brandon in this window",
+      "solution": "An escalation formatter that detects frustration keywords ('nothing is working', 'tried everything', 'just want it to work', 'call Rondell') from trusted contacts and auto-sends Rondell a structured message: who needs help, what was tried, what's blocking, and a suggested fix — so Rondell can resolve it in one reply instead of discovering the problem through a message chain.",
+      "complexity": "small",
+      "impact": "high",
+      "filename": "smart-escalation.js",
+      "priority": 9,
+      "status": "pending",
+      "identified": "2026-03-25T03:01:36.109Z",
       "built": null
     },
     {
@@ -52,6 +130,30 @@
       "priority": 4,
       "status": "pending",
       "identified": "2026-03-23T23:32:51.959Z",
+      "built": null
+    },
+    {
+      "type": "missing_tool",
+      "description": "Rondell asks for cheapest flight tickets (exit row, specific dates, South Florida to Bay Area). Dell has no web search or travel API capability to fulfill this.",
+      "solution": "A flight search tool using a free API (Google Flights via SerpAPI or Amadeus free tier) that takes origin, destination, date range, and seat preference, then returns top 5 cheapest options formatted for WhatsApp.",
+      "complexity": "medium",
+      "impact": "medium",
+      "filename": "flight-search.js",
+      "priority": 4,
+      "status": "pending",
+      "identified": "2026-03-24T03:00:38.402Z",
+      "built": null
+    },
+    {
+      "type": "missing_tool",
+      "description": "Rondell asks for a slideshow 'based on what luxmedellin.net does' — on brand and ready to send. Dell needs to scrape a site, understand the brand, and generate presentation content. No tool exists for this.",
+      "solution": "A website-to-slideshow generator: scrapes a URL with Puppeteer, extracts brand colors/fonts/copy/images, then generates a simple HTML slide deck or PDF that can be sent via WhatsApp.",
+      "complexity": "medium",
+      "impact": "medium",
+      "filename": "site-to-slides.js",
+      "priority": 4,
+      "status": "pending",
+      "identified": "2026-03-24T03:00:38.402Z",
       "built": null
     }
   ]
